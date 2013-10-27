@@ -1,8 +1,7 @@
-xbmc-fmr : Update movie rating for XBMC database
+xbmc-fmr : XBMC movie rating up-to-date
 =======================
 
 This script intend to keep your movie rating up to date
-
 Currently only work with mysql DB
 
 Supported Ruby version
@@ -31,7 +30,8 @@ Usage
 
 Don't forget to configure Mysql settings !
 
-```Usage: ./xbmc-fix-imdb.rb [options]
+```Shell
+Usage: ./xbmc-fix-imdb.rb [options]
     -a, --all                        All movies rating update.
     -z, --zero                       Only proceed movie with a rating of 0.
     -d, --dry                        Dry run mode, no database update.
