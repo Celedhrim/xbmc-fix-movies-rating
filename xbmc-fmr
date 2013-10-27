@@ -1,0 +1,173 @@
+#!/usr/bin/env ruby
+
+# This program fix movies rating in XBMC mysql database using IMDB.
+# By default it proceed a random number of movies with progress bar.
+#
+# Celedhrim - 2013
+
+require 'mysql2'
+require 'imdb'
+require 'ruby-progressbar'
+require 'optparse'
+
+#############################################
+##				SETTINGS 				   ##
+#############################################
+
+# Mysql connection settings
+
+dbhost = 'localhost'
+dbuser = 'xbmc'
+dbpass = 'xbmc'
+dbname = 'xbmc_video75'
+
+# Default number of random movie
+
+random_movies = 10
+
+#############################################
+## 			   NO MORE EDIT 			   ##
+#############################################
+
+#set default options
+
+$options = {
+	:all => nil,
+	:zero => nil,
+	:dry => nil,
+	:cron => nil,
+	:num => random_movies
+}
+
+#set constants
+
+constants = {
+	:version => '0.1'
+}
+
+# function tu put messages
+def myputs(msg)
+	if $options[:cron] then
+		puts msg
+	else
+		$progressbar.log msg
+	end
+end
+
+# Options parser
+
+parser = OptionParser.new do |opts|
+	opts.banner = "Usage: #{File.basename($0)} [options]"
+
+	opts.on('-a', '--all', 'All movies rating update.') do
+		$options[:all] = true
+	end
+	opts.on('-z', '--zero', 'Only proceed movie with a rating of 0.') do
+		$options[:zero] = true
+	end
+	opts.on('-d', '--dry', 'Dry run mode, no database update.') do
+		$options[:dry] = true
+	end
+
+	opts.on('-c', '--cron', 'Crontab mode , no progress bar.') do
+		$options[:cron] = true
+	end
+
+	opts.on('-n', '--num [VAL]', "Proceed [VAL] random movies rating update (default #{random_movies}).") do |num|
+		$options[:num] = num if num.is_a? Integer
+	end
+
+	opts.on('--version', "Display #{File.basename($0)} version and exit.") do
+		puts "#{File.basename($0)} #{constants[:version]}"
+		exit
+	end
+
+	opts.on_tail('-h', '--help', 'display this help and exit.') do
+		puts opts
+		exit
+	end
+end	
+
+parser.parse!
+
+# Check mutually exlude options
+
+if $options[:all] and $options[:zero] then
+	puts 'Options [-a|--all] and [-z|--zero] cannot call together.'
+	exit
+end	
+
+# Connect to mysql database
+   
+con = Mysql2::Client.new(
+        :host => dbhost,
+        :username => dbuser,
+        :password => dbpass,
+        :database => dbname
+        )
+
+# Choose what to proceed
+
+if $options[:all] then
+	rs = con.query("SELECT idMovie,c00,c04,c05,c07,c09 FROM movie")
+elsif $options[:zero] then
+	rs = con.query("SELECT idMovie,c00,c04,c05,c07,c09 FROM movie WHERE c05='0.000000'")
+else
+	rs = con.query("SELECT idMovie,c00,c04,c05,c07,c09 FROM movie ORDER BY RAND() LIMIT #{$options[:num]}")
+end
+
+# initialize the progress bar
+
+$progressbar = ProgressBar.create(:length => 80, :format => '%e |%b>%i| %P%% %t') unless $options[:cron]
+myputs('-'*80) unless $options[:cron]
+
+# Start the loop
+
+x=1
+step = (x*100.0)/rs.count
+rs.each do |h|
+	mid = h['idMovie'].to_s
+	mname = h['c00']
+	mrating = h['c05'].to_s
+	mvotes = h['c04'].to_s
+	myear = h['c07'].to_s
+	mimdb = h['c09'][2..-1]
+	if mimdb.to_s.match(/(\d\d\d\d\d\d\d)/) then
+		r = Imdb::Movie.new(mimdb)
+		rrating = r.rating.to_s + '00000'
+		rvotes = r.votes.to_s.reverse.gsub(/...(?=.)/,'\&,').reverse
+		if rrating != mrating then
+			myputs("| Progress: #{x}/#{rs.count}")
+			con.query("UPDATE movie SET c05='#{rrating}', c04='#{rvotes}' WHERE idMovie='#{mid}'") unless $options[:dry]
+			myputs("| Update #{mname}")
+			myputs("| Rating: #{mrating} => #{rrating}")
+			myputs("| Votes : #{mvotes} => #{rvotes}")
+			myputs('-'*80)
+		end
+	else
+		myputs("| Progress: #{x}/#{rs.count}")
+		myputs("| IMDB id not valid for #{mname}")
+		myputs("| try fixing ...")
+		s = Imdb::Search.new("#{mname} #{myear}")
+		r = s.movies
+		if r.size > 0 then
+			rrating = r.first.rating.to_s + '00000'
+			rvotes = r.first.votes.to_s.reverse.gsub(/...(?=.)/,'\&,').reverse
+			rimdbid = 'tt' + r.first.id
+			myputs("| Found a match #{r.first.id} => #{r.first.title}")
+			con.query("UPDATE movie SET c05='#{rrating}', c04='#{rvotes}', c09='#{rimdbid}' WHERE idMovie='#{mid}'") unless $options[:dry]
+			myputs("| Update #{mname} with id #{rimdbid}")
+			myputs("| Rating: #{rrating}")
+			myputs("| Votes : #{rvotes}")
+		else
+			myputs("| No match found for #{mname}")
+			myputs("| skipping :(}")
+			myputs('-'*80)
+		end
+	end
+	unless $options[:cron] then
+		x == rs.count ? $progressbar.finish : $progressbar.progress += step
+	end
+	x = x+1
+end
+con.close if con
