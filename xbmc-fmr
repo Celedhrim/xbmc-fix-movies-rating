@@ -1,7 +1,7 @@
-#!/usr/bin/ruby
+#!/usr/bin/env ruby
 
 # This program fix movies rating in XBMC mysql database using IMDB.
-# By default it proceed a random number of movies.
+# By default it proceed a random number of movies with progress bar.
 #
 # Celedhrim - 2013
 
@@ -15,7 +15,7 @@ require 'optparse'
 #############################################
 
 # Choose database , mysql or sqlite
-dbtype = 'mysql'
+dbtype = 'sqlite'
 
 # Mysql connection settings
 
@@ -26,7 +26,7 @@ dbname = 'xbmc_video75'
 
 # sqlite xbmc video database file
 
-dbfile = '/public/ok/MyVideos75.db.sav'
+dbfile = '~/.xbmc/userdata/MyVideos75.db'
 
 # Default number of random movie
 
@@ -80,7 +80,7 @@ end
 # Options parser
 
 parser = OptionParser.new do |opts|
-	opts.banner = "Usage: #{$0} [options]"
+	opts.banner = "Usage: #{File.basename($0)} [options]"
 
 	opts.on('-a', '--all', 'All movies rating update.') do
 		$options[:all] = true
@@ -137,7 +137,6 @@ else
 	rs = con[:movie].select(:idMovie, :c00, :c04, :c05, :c07, :c09).order(Sequel.lit(myrand)).limit($options[:num]).to_a
 	puts "Check #{rs.count} random movies"
 end
-con.disconnect
 
 
 # initialize the progress bar
@@ -163,9 +162,7 @@ rs.each do |h|
 		rvotes = r.votes.to_s.reverse.gsub(/...(?=.)/,'\&,').reverse
 		if rrating != mrating then
 			myputs("| Progress: #{x}/#{rs.count}")
-			con = Sequel.connect(dbchain)
 			con[:movie].where(:idMovie => mid).update(:c05 => rrating, :c04 => rvotes) unless $options[:dry]
-			con.disconnect
 			myputs("| Update #{mname}")
 			myputs("| Rating: #{mrating} => #{rrating}")
 			myputs("| Votes : #{mvotes} => #{rvotes}")
@@ -182,9 +179,7 @@ rs.each do |h|
 			rvotes = r.first.votes.to_s.reverse.gsub(/...(?=.)/,'\&,').reverse
 			rimdbid = 'tt' + r.first.id
 			myputs("| Found a match #{r.first.id} => #{r.first.title}")
-			con = Sequel.connect(dbchain)
 			con[:movie].where(:idMovie => mid).update(:c05 => rrating, :c04 => rvotes, :c09 => rimdbid) unless $options[:dry]
-			con.disconnect
 			myputs("| Update #{mname} with id #{rimdbid}")
 			myputs("| Rating: #{rrating}")
 			myputs("| Votes : #{rvotes}")
