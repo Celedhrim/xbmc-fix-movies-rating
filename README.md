@@ -4,6 +4,18 @@ xbmc-fmr : XBMC Fix Movies Rating
 This script intend to keep your movie rating up to date
 Currently only work with mysql DB
 
+Changelog
+--------------------------
+* v0.2
+
+Switch to sequel and sqlite native xbmc database support
+
+* v0.1
+
+Initial release
+
+
+
 Supported Ruby version
 --------------------------
 
@@ -17,7 +29,8 @@ If there's no valid IMDB id for the movie , it try to fix it with the first sear
 
 Required gem
 --------------------------
-* mysql2
+* sequel
+* mysql2 or/and sqlite
 * imdb
 * ruby-progressbar
 
