@@ -8,9 +8,9 @@ Changelog
 --------------------------
 * v 0.3
 
--Fix encoding for sqlite database
--Add a verbose option
--Add ability to proceed last movie(s) with -n option
+- Fix encoding for sqlite database
+- Add a verbose option
+- Add ability to proceed last movie(s) with -n option
 
 * v 0.2
 
