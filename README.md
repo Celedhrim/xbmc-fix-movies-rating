@@ -8,19 +8,17 @@ Changelog
 --------------------------
 * v 0.3
 
-- Fix encoding for sqlite database
-- Add a verbose option
-- Add ability to proceed last movie(s) with -n option
+    - Fix encoding for sqlite database
+    - Add a verbose option
+    - Add ability to proceed last movie(s) with -n option
 
 * v 0.2
 
--Switch to sequel and sqlite native xbmc database support
+    - Switch to sequel and sqlite native xbmc database support
 
 * v 0.1
 
--Initial release
-
-
+    - Initial release
 
 Supported Ruby version
 --------------------------
