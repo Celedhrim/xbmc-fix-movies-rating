@@ -11,11 +11,11 @@ require 'ruby-progressbar'
 require 'optparse'
 
 #############################################
-##				SETTINGS 				   ##
+##             SETTINGS                    ##
 #############################################
 
 # Choose database , mysql or sqlite
-dbtype = 'sqlite'
+dbtype = 'mysql'
 
 # Mysql connection settings
 
@@ -33,23 +33,25 @@ dbfile = '~/.xbmc/userdata/MyVideos75.db'
 random_movies = 10
 
 #############################################
-## 			   NO MORE EDIT 			   ##
+##            NO MORE EDIT                 ##
 #############################################
 
 #set default options
 
 $options = {
 	:all => nil,
+	:last => nil,
 	:zero => nil,
 	:dry => nil,
 	:cron => nil,
-	:num => random_movies
+	:num => random_movies,
+	:verbose => nil
 }
 
 #set constants
 
 constants = {
-	:version => '0.2'
+	:version => '0.3'
 }
 
 if dbtype == 'mysql' then
@@ -85,26 +87,28 @@ parser = OptionParser.new do |opts|
 	opts.on('-a', '--all', 'All movies rating update.') do
 		$options[:all] = true
 	end
+	opts.on('-l', '--last', "Procced last #{random_movies} (modify number with [-n] option.") do
+		$options[:last] = true
+	end
 	opts.on('-z', '--zero', 'Only proceed movie with a rating of 0.') do
 		$options[:zero] = true
 	end
 	opts.on('-d', '--dry', 'Dry run mode, no database update.') do
 		$options[:dry] = true
 	end
-
 	opts.on('-c', '--cron', 'Crontab mode , no progress bar.') do
 		$options[:cron] = true
 	end
-
-	opts.on('-n', '--num [VAL]', "Proceed [VAL] random movies rating update (default #{random_movies}).") do |num|
+	opts.on('-n', '--num [VAL]', "Proceed [VAL] random or last movies rating update (default #{random_movies}).") do |num|
 		$options[:num] = num
 	end
-
+	opts.on('-v', '--verbose', "Verbose mode, movies with right rating are also shown.") do
+		$options[:verbose] = true
+	end
 	opts.on('--version', "Display #{File.basename($0)} version and exit.") do
 		puts "#{File.basename($0)} #{constants[:version]}"
 		exit
 	end
-
 	opts.on_tail('-h', '--help', 'display this help and exit.') do
 		puts opts
 		exit
@@ -117,6 +121,12 @@ parser.parse!
 
 if $options[:all] and $options[:zero] then
 	puts 'Options [-a|--all] and [-z|--zero] cannot call together.'
+	exit
+elsif $options[:all] and $options[:last] then
+	puts 'Options [-a|--all] and [-l|--last] cannot call together.'
+	exit
+elsif $options[:cron] and $options[:last] then
+	puts 'Options [-c|--cron] and [-l|--zero] cannot call together.'
 	exit
 end	
 
@@ -132,6 +142,9 @@ if $options[:all] then
 elsif $options[:zero] then
 	rs = con[:movie].select(:idMovie, :c00, :c04, :c05, :c07, :c09).where(:c05 => '0.000000').to_a
 	puts "Check movies with 0 rating ( #{rs.count} )"
+elsif $options[:last] then
+	rs = con[:movie].select(:idMovie, :c00, :c04, :c05, :c07, :c09).order(Sequel.desc(:idMovie)).limit($options[:num]).to_a
+	puts "Check the #{rs.count} last movies"
 else
 	myrand = dbtype == 'mysql' ? 'RAND()' : 'RANDOM()'
 	rs = con[:movie].select(:idMovie, :c00, :c04, :c05, :c07, :c09).order(Sequel.lit(myrand)).limit($options[:num]).to_a
@@ -151,7 +164,8 @@ x=1
 step = (x*100.0)/rs.count
 rs.each do |h|
 	mid = h[:idMovie].to_s
-	mname = h[:c00].unpack("C*").pack("U*")
+	mname = h[:c00]
+	mname = mname.unpack("C*").pack("U*") unless dbtype == 'mysql'
 	mrating = h[:c05].to_s
 	mvotes = h[:c04].to_s
 	myear = h[:c07].to_s
@@ -167,6 +181,12 @@ rs.each do |h|
 			myputs("| Rating: #{mrating} => #{rrating}")
 			myputs("| Votes : #{mvotes} => #{rvotes}")
 			myputs('-'*80)
+		else
+			if $options[:verbose] then
+				myputs("| Progress: #{x}/#{rs.count}")
+				myputs("| Already up to date #{mname}")
+				myputs('-'*80)
+			end
 		end
 	else
 		myputs("| Progress: #{x}/#{rs.count}")

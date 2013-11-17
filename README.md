@@ -6,11 +6,16 @@ Currently only work with mysql DB
 
 Changelog
 --------------------------
-* v0.2
+* v 0.3
+Fix encoding for sqlite database
+Add a verbose option
+Add ability to proceed last movie(s) with -n option
+
+* v 0.2
 
 Switch to sequel and sqlite native xbmc database support
 
-* v0.1
+* v 0.1
 
 Initial release
 
@@ -44,12 +49,14 @@ Usage
 Don't forget to configure Mysql settings !
 
 ```Shell
-Usage: ./xbmc-fmr [options]
+Usage: xbmc-fmr [options]
     -a, --all                        All movies rating update.
+    -l, --last                       Procced last 10 (modify number with [-n] option.
     -z, --zero                       Only proceed movie with a rating of 0.
     -d, --dry                        Dry run mode, no database update.
     -c, --cron                       Crontab mode , no progress bar.
-    -n, --num [VAL]                  Proceed [VAL] random movies rating update (default 10).
+    -n, --num [VAL]                  Proceed [VAL] random or last movies rating update (default 10).
+    -v, --verbose                    Verbose mode, movies with right rating are also shown.
         --version                    Display xbmc-fmr version and exit.
     -h, --help                       display this help and exit.
 ```
