@@ -170,7 +170,7 @@ rs.each do |h|
 	mvotes = h[:c04].to_s
 	myear = h[:c07].to_s
 	mimdb = h[:c09][2..-1]
-	if mimdb.to_s.match(/(\d\d\d\d\d\d\d)/) then
+	if mimdb.to_s.match(/(\d\d\d\d\d\d\d)/) and mimdb.to_s != "0000000" then
 		r = Imdb::Movie.new(mimdb)
 		rrating = r.rating.to_s + '00000'
 		rvotes = r.votes.to_s.reverse.gsub(/...(?=.)/,'\&,').reverse
