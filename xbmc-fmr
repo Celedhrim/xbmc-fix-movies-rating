@@ -178,7 +178,7 @@ rs.each do |h|
 			myputs("| Progress: #{x}/#{rs.count}")
 			con[:movie].where(:idMovie => mid).update(:c05 => rrating, :c04 => rvotes) unless $options[:dry]
 			myputs("| Update #{mname}")
-			myputs("| Rating: #{mrating} => #{rrating}")
+			myputs("| Rating: #{mrating[0..-6]} => #{rrating[0..-6]}")
 			myputs("| Votes : #{mvotes} => #{rvotes}")
 			myputs('-'*80)
 		else
@@ -201,7 +201,7 @@ rs.each do |h|
 			myputs("| Found a match #{r.first.id} => #{r.first.title}")
 			con[:movie].where(:idMovie => mid).update(:c05 => rrating, :c04 => rvotes, :c09 => rimdbid) unless $options[:dry]
 			myputs("| Update #{mname} with id #{rimdbid}")
-			myputs("| Rating: #{rrating}")
+			myputs("| Rating: #{rrating[0..-6]}")
 			myputs("| Votes : #{rvotes}")
 			myputs('-'*80)
 		else
