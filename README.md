@@ -2,7 +2,7 @@ xbmc-fmr : XBMC Fix Movies Rating
 =======================
 
 This script intend to keep your movie rating up to date
-Currently only work with mysql DB
+Support sqlite and mysql DB
 
 Changelog
 --------------------------
