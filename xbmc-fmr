@@ -22,11 +22,11 @@ dbtype = 'mysql'
 dbhost = 'localhost'
 dbuser = 'xbmc'
 dbpass = 'xbmc'
-dbname = 'xbmc_video75'
+dbname = 'xbmc_video78'
 
 # sqlite xbmc video database file
 
-dbfile = '~/.xbmc/userdata/MyVideos75.db'
+dbfile = '~/.xbmc/userdata/MyVideos78.db'
 
 # Default number of random movie
 
